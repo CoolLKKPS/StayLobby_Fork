@@ -7,9 +7,9 @@ namespace StayLobby
 {
     public static class Patches
     {
-        public static bool GameStart { get; set; }
+        public static bool gameStart { get; set; }
 
-        public static string RawName { get; set; }
+        public static string lobbyName { get; set; }
 
         // After FinishGeneratingLevel, game must started now.
         [HarmonyPriority(0)]
@@ -17,14 +17,14 @@ namespace StayLobby
         [HarmonyPatch(typeof(RoundManager), "RefreshEnemiesList")]
         private static void GameStarted()
         {
-            Patches.GameStart = true;
+            gameStart = true;
 
             if (GameNetworkManager.Instance.currentLobby != null)
             {
-                Patches.RawName = GameNetworkManager.Instance.currentLobby.Value.GetData("name");
-                GameNetworkManager.Instance.SetLobbyJoinable(true);
+                lobbyName = GameNetworkManager.Instance.currentLobby.Value.GetData("name");
 
-                GameNetworkManager.Instance.currentLobby.Value.SetData("name", "[GameStarted] " + Patches.RawName);
+                GameNetworkManager.Instance.currentLobby.Value.SetData("name", "[GameStarted] " + lobbyName);
+                GameNetworkManager.Instance.SetLobbyJoinable(true);
                 return;
             }
             StayLobbyPlugin.ManualLog.LogWarning("GameStarted: currentLobby is null");
@@ -37,7 +37,9 @@ namespace StayLobby
         {
             if (GameNetworkManager.Instance.currentLobby != null)
             {
-                GameNetworkManager.Instance.currentLobby.Value.SetData("name", "[EndOfRound] " + Patches.RawName);
+                // GameNetworkManager.Instance.currentLobby.Value.SetData("name", "[EndOfRound] " + Patches.lobbyName);
+                GameNetworkManager.Instance.currentLobby.Value.SetData("name", lobbyName ?? "");
+                GameNetworkManager.Instance.SetLobbyJoinable(false);
                 return;
             }
             StayLobbyPlugin.ManualLog.LogWarning("EndOfRound: currentLobby is null");
@@ -48,14 +50,16 @@ namespace StayLobby
         [HarmonyPatch(typeof(StartOfRound), "SetShipReadyToLand")]
         private static void ShipReadyToLand()
         {
-            Patches.GameStart = false;
+            gameStart = false;
 
+            /*
             if (GameNetworkManager.Instance.currentLobby != null)
             {
-                GameNetworkManager.Instance.currentLobby.Value.SetData("name", Patches.RawName ?? "");
+                GameNetworkManager.Instance.currentLobby.Value.SetData("name", Patches.lobbyName ?? "");
                 return;
             }
             StayLobbyPlugin.ManualLog.LogWarning("ShipReadyToLand: currentLobby is null");
+            */
         }
 
         /*
@@ -68,7 +72,7 @@ namespace StayLobby
         {
             if (request.ClientNetworkId != NetworkManager.Singleton.LocalClientId && (response.Reason == "Ship has already landed!" || response.Reason == "Game has already started!"))
             {
-                if (Patches.GameStart)
+                if (gameStart)
                 {
                     PlayerControllerB[] allPlayerScripts = StartOfRound.Instance.allPlayerScripts;
                     int num = 0;
