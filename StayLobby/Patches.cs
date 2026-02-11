@@ -1,58 +1,32 @@
-﻿// using GameNetcodeStuff;
+﻿using BepInEx.Logging;
+using GameNetcodeStuff;
 using HarmonyLib;
-// using Unity.Netcode;
-// using UnityEngine;
+using System;
+using System.Reflection;
+using Unity.Netcode;
+using UnityEngine;
 
 namespace StayLobby
 {
     public static class Patches
     {
-        public static bool inGame { get; set; }
-
-        public static string lobbyName { get; set; }
-
         // After FinishGeneratingLevel, game must started now.
         [HarmonyPriority(0)]
         [HarmonyPostfix]
         [HarmonyPatch(typeof(RoundManager), "RefreshEnemiesList")]
-        private static void InGame()
+        private static void StartOfRoundCalled()
         {
-            inGame = true;
-
-            if (GameNetworkManager.Instance.currentLobby != null)
-            {
-                lobbyName = GameNetworkManager.Instance.currentLobby.Value.GetData("name");
-
-                GameNetworkManager.Instance.currentLobby.Value.SetData("name", "[InGame] " + lobbyName);
-                GameNetworkManager.Instance.SetLobbyJoinable(true);
-                return;
-            }
-            StayLobbyPlugin.ManualLog.LogWarning("InGame: currentLobby is null");
+            StayLobbyGameEventListener.StartOfRoundCalled = true;
         }
 
         [HarmonyPriority(0)]
         [HarmonyPostfix]
         [HarmonyPatch(typeof(StartOfRound), "EndOfGame")]
-        private static void EndOfRound()
+        private static void EndOfRoundCalled()
         {
-            if (GameNetworkManager.Instance.currentLobby != null)
-            {
-                GameNetworkManager.Instance.currentLobby.Value.SetData("name", lobbyName ?? "");
-                GameNetworkManager.Instance.SetLobbyJoinable(false);
-                return;
-            }
-            StayLobbyPlugin.ManualLog.LogWarning("EndOfRound: currentLobby is null");
+            StayLobbyGameEventListener.EndOfRoundCalled = true;
         }
 
-        [HarmonyPriority(0)]
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(StartOfRound), "SetShipReadyToLand")]
-        private static void ShipReadyToLand()
-        {
-            inGame = false;
-        }
-
-        /*
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GameNetworkManager), "ConnectionApproval")]
         [HarmonyWrapSafe]
@@ -60,9 +34,9 @@ namespace StayLobby
         [HarmonyAfter(new string[] { "mattymatty.LobbyControl" })]
         private static void Postfix(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            if (request.ClientNetworkId != NetworkManager.Singleton.LocalClientId && (response.Reason == "Ship has already landed!" || response.Reason == "Game has already started!"))
+            if (((NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsHost) || StartOfRound.Instance.IsHost) && request.ClientNetworkId != NetworkManager.Singleton.LocalClientId && (response.Reason == "Ship has already landed!" || response.Reason == "Game has already started!"))
             {
-                if (inGame)
+                if (StayLobbyGameEventListener.InGame)
                 {
                     PlayerControllerB[] allPlayerScripts = StartOfRound.Instance.allPlayerScripts;
                     int num = 0;
@@ -110,6 +84,54 @@ namespace StayLobby
                 }
             }
         }
-        */
+
+        private static Action registeredMeltdownCallback;
+
+        public static void InitializeFacilityMeltdownIntegration(ManualLogSource logger)
+        {
+            try
+            {
+                if (Type.GetType("FacilityMeltdown.MeltdownPlugin, FacilityMeltdown") == null)
+                {
+                    logger.LogInfo("Could not find FacilityMeltdown mod, skipping");
+                }
+                else
+                {
+                    logger.LogInfo("FacilityMeltdown detected, hooking into meltdown events...");
+                    Type type = Type.GetType("FacilityMeltdown.API.MeltdownAPI, FacilityMeltdown");
+                    if (type == null)
+                    {
+                        logger.LogWarning("Could not find MeltdownAPI type");
+                    }
+                    else
+                    {
+                        MethodInfo method = type.GetMethod("RegisterMeltdownListener", BindingFlags.Static | BindingFlags.Public);
+                        if (method == null)
+                        {
+                            logger.LogWarning("Could not find RegisterMeltdownListener method in MeltdownAPI");
+                        }
+                        else
+                        {
+                            logger.LogInfo("Found RegisterMeltdownListener method in MeltdownAPI");
+                            Action action = new Action(() => OnFacilityMeltdownStarted(logger));
+                            method.Invoke(null, new object[] { action });
+                            registeredMeltdownCallback = action;
+                            logger.LogInfo("Successfully registered as a meltdown listener!");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Failed to hook into FacilityMeltdown: " + ex.Message);
+                logger.LogDebug("Exception details: " + ex.ToString());
+            }
+        }
+
+        private static void OnFacilityMeltdownStarted(ManualLogSource logger)
+        {
+            logger.LogInfo("FacilityMeltdown meltdown event detected! Triggering...");
+            StayLobbyGameEventListener.OnFacilityMeltdownStarted?.Invoke();
+        }
     }
 }
