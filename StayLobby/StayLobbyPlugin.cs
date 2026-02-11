@@ -11,6 +11,7 @@ namespace StayLobby
         public void Awake()
         {
             ManualLog = base.Logger;
+            localizationManager = new LocalizationManager();
             Harmony.CreateAndPatchAll(typeof(Patches), null);
             GameObject listenerObj = new GameObject("StayLobbyEventListener");
             listenerObj.AddComponent<StayLobbyGameEventListener>();
@@ -19,5 +20,7 @@ namespace StayLobby
             Patches.InitializeFacilityMeltdownIntegration(base.Logger);
         }
         public static ManualLogSource ManualLog;
+
+        public static LocalizationManager localizationManager;
     }
 }

@@ -65,7 +65,7 @@ namespace StayLobby
                     {
                         num4 += 12;
                     }
-                    string text = "Ship has already landed!\r\n{0}\r\nAlive: {1}/{2}\r\nTime: {3}:{4}";
+                    string text = StayLobbyPlugin.localizationManager.GetString("ShipHasLandedMessage");
                     object[] array2 = new object[5];
                     int num5 = 0;
                     SelectableLevel currentLevel = StartOfRound.Instance.currentLevel;

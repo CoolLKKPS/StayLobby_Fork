@@ -1,0 +1,7 @@
+{
+    "ShipHasLandedMessage": "Ship has already landed!\r\n{0}\r\nAlive: {1}/{2}\r\nTime: {3}:{4}",
+    "DayPrefix": "[DAY] ",
+    "NightPrefix": "[NIGHT] ",
+    "FinalPrefix": "[FINAL] ",
+    "MeltdownPrefix": "[MELTDOWN] "
+}

@@ -96,7 +96,7 @@ namespace StayLobby
                 {
                     GetLobbyName();
                     string originalName = lobbyName;
-                    string newName = "[DAY] " + originalName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("DayPrefix") + originalName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 }
@@ -122,7 +122,7 @@ namespace StayLobby
                 if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
                 {
                     string originalName = lobbyName;
-                    string newName = "[NIGHT] " + originalName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("NightPrefix") + originalName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 }
@@ -143,7 +143,7 @@ namespace StayLobby
                 if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
                 {
                     string originalName = lobbyName;
-                    string newName = "[FINAL] " + originalName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("FinalPrefix") + originalName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                     PreventNormalUpdate = true;
@@ -156,7 +156,7 @@ namespace StayLobby
             if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
             {
                 string originalName = lobbyName;
-                string newName = "[MELTDOWN] " + originalName;
+                string newName = StayLobbyPlugin.localizationManager.GetString("MeltdownPrefix") + originalName;
                 GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                 Instance.GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 PreventNormalUpdate = true;

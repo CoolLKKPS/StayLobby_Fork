@@ -1,0 +1,7 @@
+{
+    "ShipHasLandedMessage": "飞船已经降落！\r\n{0}\r\n存活：{1}/{2}\r\n时间：{3}:{4}",
+    "DayPrefix": "[白天] ",
+    "NightPrefix": "[夜晚] ",
+    "FinalPrefix": "[即将撤离] ",
+    "MeltdownPrefix": "[核爆] "
+}
