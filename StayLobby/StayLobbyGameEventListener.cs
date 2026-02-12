@@ -27,6 +27,7 @@ namespace StayLobby
             CheckTimeOfDaySundown();
             CheckShipLeavingAlertCalled();
             CheckEndOfRound();
+            CheckStartOfRoundNull();
         }
 
         private T UpdateCached<T>(string key, T currentValue, T defaultValue)
@@ -95,8 +96,8 @@ namespace StayLobby
                 if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost)
                 {
                     GetLobbyName();
-                    string originalName = lobbyName;
-                    string newName = StayLobbyPlugin.localizationManager.GetString("DayPrefix") + originalName;
+                    string currentName = lobbyName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("DayPrefix") + currentName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 }
@@ -121,8 +122,8 @@ namespace StayLobby
                 GameEventListenerLogger.LogDebug("Time of day is sundown");
                 if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
                 {
-                    string originalName = lobbyName;
-                    string newName = StayLobbyPlugin.localizationManager.GetString("NightPrefix") + originalName;
+                    string currentName = lobbyName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("NightPrefix") + currentName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 }
@@ -142,8 +143,8 @@ namespace StayLobby
                 GameEventListenerLogger.LogDebug("Ship leaving alert called");
                 if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
                 {
-                    string originalName = lobbyName;
-                    string newName = StayLobbyPlugin.localizationManager.GetString("FinalPrefix") + originalName;
+                    string currentName = lobbyName;
+                    string newName = StayLobbyPlugin.localizationManager.GetString("FinalPrefix") + currentName;
                     GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                     GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                     PreventNormalUpdate = true;
@@ -155,8 +156,8 @@ namespace StayLobby
         {
             if (GameNetworkManager.Instance?.currentLobby != null && StartOfRound.Instance != null && StartOfRound.Instance.IsHost && !PreventNormalUpdate)
             {
-                string originalName = lobbyName;
-                string newName = StayLobbyPlugin.localizationManager.GetString("MeltdownPrefix") + originalName;
+                string currentName = lobbyName;
+                string newName = StayLobbyPlugin.localizationManager.GetString("MeltdownPrefix") + currentName;
                 GameNetworkManager.Instance.currentLobby.Value.SetData("name", newName);
                 Instance.GameEventListenerLogger.LogDebug($"Lobby name changed to '{newName}'");
                 PreventNormalUpdate = true;
@@ -180,9 +181,30 @@ namespace StayLobby
             }
         }
 
+        private void CheckStartOfRoundNull()
+        {
+            bool isNull = StartOfRound.Instance == null;
+            bool wasNull = this.UpdateCached<bool>("StartOfRoundNull", isNull, false);
+            if (isNull == wasNull)
+            {
+                return;
+            }
+            if (isNull)
+            {
+                GameEventListenerLogger.LogDebug("StartOfRound instance became null");
+                StartOfRoundCalled = false;
+                InGame = false;
+                EndOfRoundCalled = false;
+                PreventNormalUpdate = false;
+                cachedLobbyName = null;
+            }
+        }
+
         private ManualLogSource GameEventListenerLogger;
 
         public static string lobbyName { get; set; }
+
+        public static string cachedLobbyName { get; set; }
 
         private readonly Dictionary<string, object> previousValues = new Dictionary<string, object>();
 
