@@ -28,11 +28,7 @@ namespace StayLobby
             LocalizationFile cfg;
             try
             {
-                cfg = JsonConvert.DeserializeObject<LocalizationFile>(File.ReadAllText(cfgPath));
-                if (cfg is null)
-                {
-                    throw new JsonException("Deserialized object is null");
-                }
+                cfg = JsonConvert.DeserializeObject<LocalizationFile>(File.ReadAllText(cfgPath)) ?? throw new JsonException("Deserialized object is null");
             }
             catch (Exception)
             {
